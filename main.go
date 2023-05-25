@@ -105,11 +105,11 @@ func chatbot_sse() error {
 	if err != nil {
 		return err
 	}
-	r := azopenai.NewEventReader[azopenai.ClientGetCompletionsResponse](response.Body)
-	defer r.Close()
+	reader := response.Events
+	defer reader.Close()
 
 	for {
-		fb, err := r.Read()
+		fb, err := reader.Read()
 		if err == io.EOF {
 			//fmt.Println("End of stream")
 			break
@@ -145,9 +145,7 @@ func summarize_sse() error {
 	}
 	fmt.Printf("Input: %s\n", prompt)
 	request := azopenai.CompletionsOptions{
-		Prompt: []*string{to.Ptr(strings.Join(prompt, " "))},
-		//Prompt: prompt,
-		Stream:      to.Ptr(true),
+		Prompt:      []*string{to.Ptr(strings.Join(prompt, " "))},
 		MaxTokens:   to.Ptr(int32(2048 - 127)),
 		Temperature: to.Ptr(float32(0.0)),
 	}
@@ -155,11 +153,11 @@ func summarize_sse() error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	r := azopenai.NewEventReader[azopenai.ClientGetCompletionsResponse](response.Body)
-	defer r.Close()
+	reader := response.Events
+	defer reader.Close()
 
 	for {
-		fb, err := r.Read()
+		fb, err := reader.Read()
 		if err == io.EOF {
 			//fmt.Println("End of stream")
 			break
@@ -175,11 +173,11 @@ func summarize_sse() error {
 
 func main() {
 
-	chatbot()
+	// chatbot()
 
 	// summarize()
 
-	// chatbot_sse()
+	chatbot_sse()
 
 	// summarize_sse()
 }
