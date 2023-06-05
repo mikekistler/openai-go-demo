@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	//"strings"
 
@@ -17,31 +18,31 @@ import (
 )
 
 var (
-	client       *azopenai.Client
-	endpoint     = os.Getenv("OPENAI_ENDPOINT")
-	apiKey       = os.Getenv("OPENAI_APIKEY")
-	deploymentId = os.Getenv("OPENAI_DEPLOYMENT_ID")
+	options        *azopenai.ClientOptions
+	endpoint       = os.Getenv("AOAI_ENDPOINT")
+	apiKey         = os.Getenv("AOAI_API_KEY")
+	openaiEndpoint = "https://api.openai.com"
+	openaiApiKey   = os.Getenv("OPENAI_API_KEY")
 )
 
 func init() {
-	var err error
-	cred := azopenai.KeyCredential{APIKey: apiKey}
-	options := azopenai.ClientOptions{
+	options = &azopenai.ClientOptions{
 		ClientOptions: azcore.ClientOptions{
 			Logging: policy.LogOptions{
 				IncludeBody: true,
 			},
 		},
 	}
-	client, err = azopenai.NewClientWithKeyCredential(endpoint, cred, &options)
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
 }
 
 func chatbot() {
 	// Generate Chatbot Response
-
+	deploymentID := "text-davinci-003"
+	cred := azopenai.KeyCredential{APIKey: apiKey}
+	client, err := azopenai.NewClientWithKeyCredential(endpoint, cred, deploymentID, options)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 	prompt := "What is Azure OpenAI?"
 	fmt.Printf("Input: %s\n", prompt)
 	request := azopenai.CompletionsOptions{
@@ -49,8 +50,63 @@ func chatbot() {
 		MaxTokens:   to.Ptr(int32(2048 - 127)),
 		Temperature: to.Ptr(float32(0.0)),
 	}
-	response, err := client.GetCompletions(context.TODO(), deploymentId, request, nil)
+	response, err := client.GetCompletions(context.TODO(), request, nil)
 	if err != nil {
+		return
+	}
+	completion := response.Choices[0].Text
+	fmt.Printf("Chatbot: %s\n", *completion)
+}
+
+func openaiChatbot() {
+	// Generate Chatbot Response
+	cred := azopenai.KeyCredential{APIKey: openaiApiKey}
+	//openaiEndpoint = "http://localhost:1234"
+	client, err := azopenai.NewClientForOpenAI(openaiEndpoint, cred, options)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	prompt := "What is Azure OpenAI?"
+	fmt.Printf("Input: %s\n", prompt)
+	request := azopenai.CompletionsOptions{
+		Model:       to.Ptr("text-davinci-002"),
+		Prompt:      []*string{to.Ptr(prompt)},
+		MaxTokens:   to.Ptr(int32(1024)),
+		Temperature: to.Ptr(float32(0.0)),
+	}
+	response, err := client.GetCompletions(context.TODO(), request, nil)
+	if err != nil {
+		log.Fatalf("GetCompletions failed: %v", err)
+		return
+	}
+	completion := response.Choices[0].Text
+	fmt.Printf("Chatbot: %s\n", *completion)
+}
+
+// Generate Chatbot Response
+func crossoverChatbot() {
+	// Azure OpenAI client
+
+	deploymentID := "text-davinci-003"
+	cred := azopenai.KeyCredential{APIKey: apiKey}
+	client, err := azopenai.NewClientWithKeyCredential(endpoint, cred, deploymentID, options)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	// OpenAI Completions request
+
+	prompt := "What is Azure OpenAI?"
+	fmt.Printf("Input: %s\n", prompt)
+	request := azopenai.CompletionsOptions{
+		Model:       to.Ptr("text-davinci-002"),
+		Prompt:      []*string{to.Ptr(prompt)},
+		MaxTokens:   to.Ptr(int32(1024)),
+		Temperature: to.Ptr(float32(0.0)),
+	}
+	response, err := client.GetCompletions(context.TODO(), request, nil)
+	if err != nil {
+		log.Fatalf("GetCompletions failed: %v", err)
 		return
 	}
 	completion := response.Choices[0].Text
@@ -59,7 +115,13 @@ func chatbot() {
 
 func summarize() {
 	// Summarize Text with Completion
-
+	// Generate Chatbot Response
+	deploymentID := "text-davinci-003"
+	cred := azopenai.KeyCredential{APIKey: apiKey}
+	client, err := azopenai.NewClientWithKeyCredential(endpoint, cred, deploymentID, options)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 	prompt := []string{
 		"Summarize the following text.",
 		"",
@@ -83,7 +145,7 @@ func summarize() {
 		MaxTokens:   to.Ptr(int32(2048 - 127)),
 		Temperature: to.Ptr(float32(0.0)),
 	}
-	response, err := client.GetCompletions(context.TODO(), deploymentId, request, nil)
+	response, err := client.GetCompletions(context.TODO(), request, nil)
 	if err != nil {
 		return
 	}
@@ -93,7 +155,13 @@ func summarize() {
 
 func chatbot_sse() error {
 	// Generate Chatbot Response
-
+	// Generate Chatbot Response
+	deploymentID := "text-davinci-003"
+	cred := azopenai.KeyCredential{APIKey: apiKey}
+	client, err := azopenai.NewClientWithKeyCredential(endpoint, cred, deploymentID, options)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 	prompt := "What is Azure OpenAI?"
 	fmt.Printf("Input: %s\n", prompt)
 	request := azopenai.CompletionsOptions{
@@ -101,7 +169,7 @@ func chatbot_sse() error {
 		MaxTokens:   to.Ptr(int32(2048 - 127)),
 		Temperature: to.Ptr(float32(0.0)),
 	}
-	response, err := client.GetCompletionEvents(context.TODO(), deploymentId, request, nil)
+	response, err := client.GetCompletionsStream(context.TODO(), request, nil)
 	if err != nil {
 		return err
 	}
@@ -125,7 +193,13 @@ func chatbot_sse() error {
 
 func summarize_sse() error {
 	// Summarize Text with Completion
-
+	// Generate Chatbot Response
+	deploymentID := "text-davinci-003"
+	cred := azopenai.KeyCredential{APIKey: apiKey}
+	client, err := azopenai.NewClientWithKeyCredential(endpoint, cred, deploymentID, options)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 	prompt := []string{
 		"Summarize the following text.",
 		"",
@@ -149,7 +223,7 @@ func summarize_sse() error {
 		MaxTokens:   to.Ptr(int32(2048 - 127)),
 		Temperature: to.Ptr(float32(0.0)),
 	}
-	response, err := client.GetCompletionEvents(context.TODO(), deploymentId, request, nil)
+	response, err := client.GetCompletionsStream(context.TODO(), request, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -171,13 +245,113 @@ func summarize_sse() error {
 	return nil
 }
 
+func streaming() error {
+	// Generate Chatbot Response
+	deploymentID := "text-davinci-003"
+	cred := azopenai.KeyCredential{APIKey: apiKey}
+	client, err := azopenai.NewClientWithKeyCredential(endpoint, cred, deploymentID, options)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	prompt := "These are the numbers from 1 to 100: 1,2,3,"
+	fmt.Printf("Input: %s\n", prompt)
+	request := azopenai.CompletionsOptions{
+		Prompt:      []*string{to.Ptr(prompt)},
+		MaxTokens:   to.Ptr(int32(500)),
+		Temperature: to.Ptr(float32(0.0)),
+	}
+	startTime := time.Now()
+	response, err := client.GetCompletionsStream(context.TODO(), request, nil)
+	if err != nil {
+		return err
+	}
+	r := response.Events
+	defer r.Close()
+
+	var eventList []azopenai.Completions = make([]azopenai.Completions, 0, 300)
+	var timestampList []time.Time = make([]time.Time, 0, 300)
+	for {
+		fb, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fmt.Println("Error: " + err.Error())
+			return err
+		}
+		eventList = append(eventList, fb)
+		timestampList = append(timestampList, time.Now())
+		//fmt.Printf("%s", *fb.Choices[0].Text)
+	}
+	for i := 0; i < len(eventList); i++ {
+		latency := timestampList[i].Sub(startTime)
+		fmt.Printf("%6.3f: %s\n", latency.Seconds(), *eventList[i].Choices[0].Text)
+	}
+	return nil
+}
+
+func openai_streaming() error {
+	// Create client for OpenAI
+	cred := azopenai.KeyCredential{APIKey: openaiApiKey}
+	//openaiEndpoint = "http://localhost:1234"
+	client, err := azopenai.NewClientForOpenAI(openaiEndpoint, cred, options)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	prompt := "These are the numbers from 1 to 100: 1,2,3,"
+	fmt.Printf("Input: %s\n", prompt)
+	request := azopenai.CompletionsOptions{
+		Model:       to.Ptr("text-davinci-002"),
+		Prompt:      []*string{to.Ptr(prompt)},
+		MaxTokens:   to.Ptr(int32(500)),
+		Temperature: to.Ptr(float32(0.0)),
+	}
+	startTime := time.Now()
+	response, err := client.GetCompletionsStream(context.TODO(), request, nil)
+	if err != nil {
+		return err
+	}
+	r := response.Events
+	defer r.Close()
+
+	var eventList []azopenai.Completions = make([]azopenai.Completions, 0, 300)
+	var timestampList []time.Time = make([]time.Time, 0, 300)
+	for {
+		fb, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fmt.Println("Error: " + err.Error())
+			return err
+		}
+		eventList = append(eventList, fb)
+		timestampList = append(timestampList, time.Now())
+		//fmt.Printf("%s", *fb.Choices[0].Text)
+	}
+	for i := 0; i < len(eventList); i++ {
+		latency := timestampList[i].Sub(startTime)
+		fmt.Printf("%6.3f: %s\n", latency.Seconds(), *eventList[i].Choices[0].Text)
+	}
+	return nil
+}
+
 func main() {
 
 	// chatbot()
 
+	//openaiChatbot()
+
+	//crossoverChatbot()
+
 	// summarize()
 
-	chatbot_sse()
+	//chatbot_sse()
 
 	// summarize_sse()
+
+	// streaming()
+
+	openai_streaming()
 }
