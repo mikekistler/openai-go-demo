@@ -351,7 +351,7 @@ func main() {
 
 	// summarize_sse()
 
-	// streaming()
+	//streaming()
 
 	openai_streaming()
 }
